@@ -1,0 +1,23 @@
+BIT: copiloto flutuante para Windows
+====================================
+
+ANTES DE ABRIR (uma vez só)
+1. Instale o Claude Code. No PowerShell:
+      irm https://claude.ai/install.ps1 | iex
+2. Abra o terminal, rode   claude   e entre com a SUA conta do Claude.
+   Pode fechar depois. O Bit usa esse login e gasta o limite normal do
+   seu plano (não precisa de chave da Anthropic).
+
+ABRIR
+1. Abra "Bit.exe". O Bit aparece no topo da tela.
+   Se aparecer "O Windows protegeu o computador": "Mais informações" >
+   "Executar assim mesmo" (o app não tem assinatura digital).
+2. Na primeira vez ele abre em Configurações > Primeiros passos. Siga a
+   lista: preencha Seu perfil (nome, cargo, com quem trabalha) e teste a
+   conexão com o Claude. Voz, agenda e chave do JEV são opcionais.
+3. Atalho para abrir e fechar: Ctrl + Alt + N.
+
+SEUS DADOS
+- Tudo fica só no seu PC, em %APPDATA%\Bit (Config > Dados > Abrir pasta).
+- Senhas, links de agenda e histórico do copiar ficam criptografados pelo
+  Windows. Nada é enviado para outra pessoa que usa o Bit.

@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file:; media-src 'self' blob: file:; worker-src 'self' blob:; script-src 'self'">
+<title>Bit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="island" class="island collapsed" data-state="idle">
+
+  <!-- barra / pílula (visível nos dois modos) -->
+  <header class="bar" id="bar">
+    <button class="bar-main" id="barMain" title="Abrir (Ctrl+Alt+N) · arraste pelo rostinho para mover">
+      <span class="face sm grab" aria-hidden="true" data-face id="barFace"></span>
+      <span class="bar-label" id="barLabel">Copiloto pronto</span>
+    </button>
+    <div class="bar-chips" id="barChips"></div>
+    <span class="bar-timer" id="barTimer" hidden></span>
+    <button class="bar-min" id="barMin" type="button" title="Ocultar: fica só o rostinho do Bit"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    <div class="bar-actions">
+      <button class="icon-btn" id="cfgBtn" data-tip="Configurações">
+        <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4.9a7.5 7.5 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.4A7.5 7.5 0 0 0 7 6.4l-2.4-.9-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-.9a7.5 7.5 0 0 0 2.6 1.5l.4 2.4h4l.4-2.4a7.5 7.5 0 0 0 2.6-1.5l2.4.9 2-3.4z"/></svg>
+      </button>
+      <button class="icon-btn" id="pinBtn" title="Fixar aberta">
+        <svg viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2h-5v5l-1 1-1-1v-5H6v-2l4-3z"/></svg>
+      </button>
+      <button class="icon-btn" id="bubbleBtn" title="Ao fechar, deixar só o rostinho do Bit">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="9.5" cy="11" r="1" fill="currentColor"/><circle cx="14.5" cy="11" r="1" fill="currentColor"/></svg>
+      </button>
+      <button class="icon-btn" id="collapseBtn" title="Recolher (Esc)">
+        <svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <span class="resize-grip" id="resizeGrip" title="Arraste para aumentar ou diminuir"></span>
+  <main class="panel" id="panel">
+
+    <!-- HOME -->
+    <section class="view" data-view="home">
+      <div class="tiles">
+        <button class="tile t-copiloto" id="tileCopiloto" data-go="chat">
+          <span class="tile-k">Bit</span>
+          <span class="face lg" aria-hidden="true" data-face></span>
+          <span class="tile-big sm" id="tcBig">Tudo em dia</span>
+          <span class="tile-sub" id="tcSub">Manda o que chegou</span>
+        </button>
+        <button class="tile t-demandas" data-go="demandas">
+          <span class="tile-k">Demandas</span>
+          <span class="tile-big" id="tdBig">0</span>
+          <span class="tile-sub" id="tdSub">abertas</span>
+        </button>
+        <button class="tile t-foco" data-go="foco">
+          <span class="tile-k">Foco</span>
+          <span class="tile-play" id="tfPlay" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="tile-big mono" id="tfBig">25:00</span>
+          <span class="tile-sub" id="tfSub">Um toque e começa</span>
+        </button>
+        <button class="tile t-agenda" data-go="t:agenda">
+          <span class="tile-k">Agenda</span>
+          <span class="tile-big sm" id="taBig">Conectar</span>
+          <span class="tile-sub" id="taSub">Outlook ou Google</span>
+          <span hidden id="tcyBig"></span><span hidden id="tcySub"></span>
+        </button>
+      </div>
+
+      <div class="home-grid">
+        <div class="card top3 today">
+          <div class="card-h"><span>Seu dia</span><span class="hint" id="todayNow"></span></div>
+          <div class="td-list" id="todayList"></div>
+          <div class="td-h"><span>Top demandas</span><button class="link" data-go="demandas">ver todas</button></div>
+          <ol id="top3"></ol>
+        </div>
+        <div class="card quick">
+          <div class="card-h"><span>Fala com o Bit</span><span class="eng" id="engBadge"></span></div>
+          <div class="as-feed" id="asFeed"></div>
+          <div class="modes one" id="homeModes"></div>
+          <div class="composer">
+            <textarea id="homeInput" rows="2" placeholder="Ex.: me lembra de pagar o boleto às 15h · a Ana pediu o relatório até quinta · anota: …"></textarea>
+            <button class="mic" type="button" title="Falar (Ctrl+Alt+V)"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+            <button class="send" id="homeSend" title="Enviar"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section class="view" data-view="chat" hidden>
+      <div class="sess">
+        <aside class="sess-side">
+          <div class="side-top">
+            <button class="btn primary new-sess" type="button" id="newSessBtn">+ Nova sessão</button>
+            <button class="icon-btn" type="button" id="sessSearchBtn" title="Buscar sessões (Ctrl+F)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
+          </div>
+          <div class="sess-search" id="sessSearch" hidden>
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+            <input id="sessQ" placeholder="Buscar por nome ou projeto…" autocomplete="off">
+            <button class="si-x" type="button" id="sessQx" title="Fechar busca (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          </div>
+          <div class="sess-list" id="sessList"></div>
+        </aside>
+        <div class="sess-main">
+          <div class="sess-head" id="sessHead"></div>
+          <div class="chat" id="chat"></div>
+          <div class="chat-foot">
+            <div class="modes small" id="chatModes"></div>
+            <div class="cc-ctl" id="ccCtl" hidden>
+              <span class="lbl">Pode</span>
+              <div class="segm" id="ccPerm">
+                <button type="button" data-p="plan" title="Só lê os arquivos e responde/planeja. Não altera nada.">Só ler</button>
+                <button type="button" data-p="acceptEdits" title="Pode criar e editar arquivos do projeto. Comandos no terminal continuam bloqueados.">Editar arquivos</button>
+                <button type="button" data-p="auto" title="O Claude decide sozinho o que é seguro fazer.">Automático</button>
+                <button type="button" data-p="bypassPermissions" title="Libera tudo, inclusive comandos. Use só em projetos que você confia.">Tudo</button>
+              </div>
+              <select id="ccModel" title="Modelo para esta mensagem"><option value="">Modelo da sessão</option><option value="haiku">Haiku</option><option value="sonnet">Sonnet</option><option value="opus">Opus</option></select>
+              <span class="grow"></span>
+              <button class="btn sm stop" type="button" id="ccStop" hidden>■ Parar</button>
+            </div>
+            <div class="composer">
+              <textarea id="chatInput" rows="2" placeholder="Escreve do jeito que vier…"></textarea>
+              <button class="mic" type="button" title="Falar (Ctrl+Alt+V)"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+              <button class="send" id="chatSend" title="Enviar"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <form class="newsess" id="newSess" hidden>
+          <div class="ns-card">
+            <div class="ns-top"><span class="face md" aria-hidden="true" data-face></span><div><h3>Nova sessão</h3><p class="muted">Escolha o tipo e o modelo antes de começar.</p></div></div>
+            <label class="lbl" for="nsTitle">Nome (opcional)</label>
+            <input id="nsTitle" placeholder="Ex.: Relatório do mês, E-mail pro cliente…" autocomplete="off">
+            <span class="lbl">Tipo</span>
+            <div class="seg" id="nsKind">
+              <button type="button" data-v="nip" class="on"><b>Copiloto Bit</b><small>Demandas, prioridades, dia a dia</small></button>
+              <button type="button" data-v="geral"><b>Assistente geral</b><small>Qualquer pedido, pesquisa na web</small></button>
+            </div>
+            <span class="lbl">Modelo</span>
+            <div class="seg three" id="nsModel">
+              <button type="button" data-v="haiku" class="on"><b>Haiku</b><small>Rápido, gasta pouco</small></button>
+              <button type="button" data-v="sonnet"><b>Sonnet</b><small>Equilibrado</small></button>
+              <button type="button" data-v="opus"><b>Opus</b><small>O mais forte, gasta mais</small></button>
+            </div>
+            <div class="row"><button class="btn primary" type="submit">Começar</button><button class="btn" type="button" id="nsCancel">Cancelar</button></div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- DEMANDAS -->
+    <section class="view" data-view="demandas" hidden>
+      <div class="dem-head">
+        <form id="addForm" class="add">
+          <input id="addTitle" placeholder="Adicionar demanda rápida (sem IA)…" autocomplete="off">
+          <select id="addPrio" title="Prioridade">
+            <option value="agora">Agora</option><option value="hoje">Hoje</option><option value="semana" selected>Semana</option><option value="espera">Espera</option><option value="devolver">Devolver</option>
+          </select>
+          <button class="btn" type="submit">Adicionar</button>
+        </form>
+        <button class="link" id="clearDone">Limpar feitas</button>
+      </div>
+      <details class="ciclo-box" id="cicloBox" hidden>
+        <summary><span class="cs-ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></span><b>Prazos importantes</b><span id="cicloSum" class="muted"></span><span class="grow"></span><span class="cs-more muted">ver</span></summary>
+        <div class="timeline" id="timeline"></div>
+        <div class="card rule" id="ruleCard" hidden></div>
+      </details>
+      <div class="dem-list" id="demList"></div>
+    </section>
+
+    <!-- FOCO -->
+    <section class="view" data-view="foco" hidden>
+      <div class="focus">
+        <div class="ring-big">
+          <svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="52"/><circle class="prg" id="focusPrg" cx="60" cy="60" r="52"/></svg>
+          <div class="ring-txt"><span class="mono" id="focusTime">25:00</span><span id="focusState">pronto</span></div>
+        </div>
+        <div class="focus-side">
+          <label class="lbl" for="focusDemand">Focando em</label>
+          <select id="focusDemand"><option value="">Nada específico</option></select>
+          <div class="row">
+            <button class="btn primary" id="focusStart">Começar</button>
+            <button class="btn" id="focusReset">Zerar</button>
+          </div>
+          <div class="row presets">
+            <button class="chip-btn" data-min="15">15 min</button>
+            <button class="chip-btn" data-min="25">25 min</button>
+            <button class="chip-btn" data-min="50">50 min</button>
+          </div>
+          <p class="muted" id="focusCount">0 blocos de foco hoje</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CICLO -->
+
+
+    <!-- FERRAMENTAS -->
+    <section class="view" data-view="ferramentas" hidden>
+      <div class="tools">
+        <div class="tools-main">
+
+          <div class="tpane" data-pane="agenda" hidden>
+            <div class="ag">
+              <div class="ag-main">
+                <div class="ag-top"><b id="agToday"></b><span class="muted" id="agInfo"></span><span class="grow"></span>
+                  <button class="icon-btn sm" type="button" id="agRefresh" title="Atualizar agora"><svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></svg></button>
+                  <button class="btn sm" type="button" id="agCfgBtn">Calendários</button></div>
+                <div class="ag-cfg" id="agCfg" hidden></div>
+                <div class="ag-list" id="agList"></div>
+              </div>
+              <div class="ag-side">
+                <div class="mh">Lembretes</div>
+                <div class="rem-add">
+                  <input id="remText" placeholder="Ex.: cobrar a TI amanhã às 10h" autocomplete="off">
+                  <div class="rem-when"><span class="rem-prev" id="remPrev"></span><input type="datetime-local" id="remAt"><select id="remRep" title="Repetir"><option value="">Uma vez</option><option value="dia">Todo dia</option><option value="util">Dias úteis</option><option value="semana">Toda semana</option><option value="mes">Todo mês</option><option value="custom" hidden></option></select><button class="btn primary sm" type="button" id="remSave">Lembrar</button></div>
+                </div>
+                <div class="rem-list" id="remList"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tpane" data-pane="clip" hidden>
+            <div class="clip-top">
+              <input id="clipSearch" placeholder="Buscar no que você copiou…" autocomplete="off">
+              <label class="sw"><input type="checkbox" id="clipOn"><span>Guardando</span></label>
+              <button class="link danger" type="button" id="clipClear">Limpar</button>
+            </div>
+            <div class="muted clip-tip" id="clipTip"></div>
+            <div class="clip-list" id="clipList"></div>
+          </div>
+
+          <div class="tpane" data-pane="texto" hidden>
+            <div class="tx">
+              <div class="tx-ctx">
+                <div class="mh">Para quem e para quê? <span class="muted">opcional, mas ajuda muito</span></div>
+                <div class="tx-grid">
+                  <input id="txWho" placeholder="Para quem? (ex.: minha gestora, um cliente, o grupo da família)" autocomplete="off">
+                  <input id="txGoal" placeholder="Para quê? (ex.: pedir mais prazo, agradecer, cobrar uma resposta)" autocomplete="off">
+                </div>
+                <div class="tx-opts">
+                  <span class="tx-ol">Onde vai</span><div class="segm" data-to="canal"><button type="button" data-v="" class="on">Tanto faz</button><button type="button" data-v="email">E-mail</button><button type="button" data-v="whats">WhatsApp</button><button type="button" data-v="chat">Teams/Slack</button><button type="button" data-v="linkedin">LinkedIn</button><button type="button" data-v="doc">Documento</button></div>
+                </div>
+                <div class="tx-opts">
+                  <span class="tx-ol">Tom</span><div class="segm" data-to="tom"><button type="button" data-v="natural" class="on">Natural</button><button type="button" data-v="formal">Formal</button><button type="button" data-v="amigavel">Amigável</button><button type="button" data-v="direto">Direto</button></div>
+                  <span class="tx-ol">Tamanho</span><div class="segm" data-to="tam"><button type="button" data-v="igual" class="on">Igual</button><button type="button" data-v="curto">Mais curto</button><button type="button" data-v="longo">Mais completo</button></div>
+                </div>
+              </div>
+              <div class="mh">Texto <span class="muted" id="txHint"></span></div>
+              <textarea id="txIn" rows="5" placeholder="Cole aqui o texto para reescrever… (ou selecione um texto em qualquer programa e aperte Ctrl+Alt+X)"></textarea>
+              <div class="row tx-go"><button class="btn primary" type="button" id="txGo">Reescrever</button><label class="inline"><input type="checkbox" id="txFix"> Só corrigir os erros (não muda o jeito de escrever)</label></div>
+              <div class="tx-out msg assistant" id="txOut" hidden></div>
+              <div class="row tx-res" id="txRes" hidden>
+                <button class="btn primary" type="button" id="txPaste">Colar no lugar</button>
+                <button class="btn" type="button" id="txCopy">Copiar</button>
+                <span class="grow"></span>
+                <span class="muted">Ajustar:</span>
+                <button class="chip-btn" type="button" data-adj="curto">Mais curto</button>
+                <button class="chip-btn" type="button" data-adj="formal">Mais formal</button>
+                <button class="chip-btn" type="button" data-adj="leve">Mais leve</button>
+                <button class="chip-btn" type="button" data-adj="outra">Outra versão</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="tpane" data-pane="arquivos">
+            <div class="drop" id="dropZone">
+              <span class="face md" aria-hidden="true" data-face></span>
+              <div><b>Solta arquivos aqui (ou em cima do Bit na pílula)</b><span class="muted">Imagens, vídeos, áudios, PDFs, Word, Excel, PowerPoint, planilhas, textos… ou qualquer arquivo para renomear, compactar ou mandar pra Lixeira.</span></div>
+              <button class="btn" type="button" id="pickFiles">Escolher…</button>
+            </div>
+            <div class="flist" id="fileList"></div>
+            <div class="batch" id="batchBox" hidden></div>
+            <div class="factions" id="fileActions"></div>
+            <div class="flog" id="fileLog"></div>
+          </div>
+
+          <div class="tpane" data-pane="notas" hidden>
+            <div class="notes">
+              <div class="notes-side">
+                <div class="row"><input id="noteSearch" placeholder="Buscar…" autocomplete="off"><button class="btn primary" type="button" id="noteNew">+</button></div>
+                <div class="notes-list" id="notesList"></div>
+              </div>
+              <div class="notes-main">
+                <textarea id="noteText" placeholder="Cola ou escreve aqui. Salva sozinho. A primeira linha vira o título."></textarea>
+                <div class="row"><span class="muted" id="noteInfo"></span><span class="grow"></span>
+                  <button class="link" type="button" id="notePin">Fixar</button>
+                  <button class="link" type="button" id="noteCopy">Copiar tudo</button>
+                  <button class="link danger" type="button" id="noteDel">Apagar</button></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tpane" data-pane="cofre" hidden>
+            <div class="vault-top">
+              <div class="segm" id="vFilter"><button type="button" data-f="all" class="on">Tudo</button><button type="button" data-f="chave">Chaves</button><button type="button" data-f="conta">Contas</button></div>
+              <input id="vSearch" placeholder="Buscar…" autocomplete="off">
+              <button class="btn primary" type="button" id="vNew">+ Novo</button>
+            </div>
+            <form class="vault-form" id="vaultForm" hidden>
+              <div class="segm big" id="vKind">
+                <button type="button" data-k="chave" class="on"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2 2M14 9l2 2"/></svg>Chave / token</button>
+                <button type="button" data-k="conta"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Conta (login e senha)</button>
+              </div>
+              <div class="vf-grid">
+                <input id="vName" placeholder="Nome (ex.: Token GitHub)" autocomplete="off" required>
+                <input id="vUser" data-only="conta" placeholder="Usuário ou e-mail" autocomplete="off">
+                <input id="vUrl" data-only="conta" placeholder="Site (ex.: banco.com.br)" autocomplete="off">
+                <div class="pw"><input id="vValue" type="password" placeholder="Chave (fica criptografada)" autocomplete="new-password"><button type="button" class="mini" id="vEye" title="Mostrar/ocultar"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button><button type="button" class="btn sm" id="vGen" data-only="conta">Gerar senha</button></div>
+                <input id="vNote" placeholder="Obs. (opcional)" autocomplete="off">
+              </div>
+              <div class="row"><button class="btn primary" type="submit" id="vSave">Guardar</button><button class="btn" type="button" id="vCancel">Cancelar</button><span class="muted">🔒 Criptografado pelo Windows. Ao copiar, some da área de transferência em 30s.</span></div>
+            </form>
+            <div class="vault-list" id="vaultList"></div>
+          </div>
+
+          <div class="tpane" data-pane="reuniao" hidden>
+            <div class="meet-top">
+              <select id="meetSel" title="Reuniões"></select>
+              <input id="meetTitle" placeholder="Nome da reunião" autocomplete="off">
+              <button class="btn rec" type="button" id="meetRec"><span class="rdot"></span><span id="meetRecTxt">Gravar</span></button>
+              <span class="mono muted" id="meetTimer"></span>
+            </div>
+            <div class="meet-banner" id="meetBanner" hidden>🔴 Gravando o áudio do PC e o seu microfone. Avise quem está na reunião. <span id="meetQueue"></span></div>
+            <div class="meet-cols">
+              <div class="meet-notes">
+                <div class="mh">Minhas notas <span class="muted">Enter = nova linha com horário</span></div>
+                <textarea id="meetNotes" placeholder="Anota aqui durante a reunião…"></textarea>
+              </div>
+              <div class="meet-right">
+                <div class="mh"><button type="button" class="mtab on" data-mt="tr">Transcrição</button><button type="button" class="mtab" data-mt="sum">Resumo</button><span class="grow"></span>
+                  <select id="meetModel" title="Modelo do resumo"><option value="haiku">Haiku</option><option value="sonnet" selected>Sonnet</option><option value="opus">Opus</option></select>
+                  <button class="btn primary" type="button" id="meetSum">Gerar resumo</button></div>
+                <div class="meet-tr" id="meetTr"></div>
+                <div class="meet-sum msg assistant" id="meetSumBox" hidden></div>
+                <div class="row" id="meetSumActions" hidden>
+                  <button class="btn" type="button" id="meetToNip">Mandar tarefas pro Copiloto</button>
+                  <button class="link" type="button" id="meetCopy">Copiar resumo</button>
+                  <span class="grow"></span><button class="link danger" type="button" id="meetDel">Apagar reunião</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tpane" data-pane="musica" hidden>
+            <div class="now" id="nowCard">
+              <div class="now-art"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></div>
+              <div class="now-txt"><span class="muted" id="nowApp">Tocando agora no PC</span><b id="nowTitle">Nada tocando</b><span id="nowArtist" class="muted"></span></div>
+              <div class="now-ctl">
+                <button class="icon-btn" type="button" data-mc="prev" title="Anterior"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 5L9 12l10 7z"/></svg></button>
+                <button class="icon-btn big" type="button" data-mc="toggle" title="Tocar/pausar"><svg viewBox="0 0 24 24" id="nowPP"><path d="M8 5v14l11-7z"/></svg></button>
+                <button class="icon-btn" type="button" data-mc="next" title="Próxima"><svg viewBox="0 0 24 24"><path d="M18 5v14M5 5l10 7-10 7z"/></svg></button>
+              </div>
+            </div>
+            <div class="player">
+              <div class="row"><b>Minhas músicas</b><span class="grow"></span><button class="btn" type="button" id="plAddFiles">+ Arquivos</button><button class="btn" type="button" id="plAddFolder">+ Pasta</button><button class="link danger" type="button" id="plClear">Limpar</button></div>
+              <audio id="audio" preload="metadata"></audio>
+              <div class="pl-ctl">
+                <button class="icon-btn" type="button" id="plPrev" title="Anterior"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 5L9 12l10 7z"/></svg></button>
+                <button class="icon-btn big" type="button" id="plPlay" title="Tocar/pausar"><svg viewBox="0 0 24 24" id="plPP"><path d="M8 5v14l11-7z"/></svg></button>
+                <button class="icon-btn" type="button" id="plNext" title="Próxima"><svg viewBox="0 0 24 24"><path d="M18 5v14M5 5l10 7-10 7z"/></svg></button>
+                <span class="mono muted" id="plTime">0:00</span>
+                <input type="range" id="plSeek" min="0" max="1000" value="0">
+                <input type="range" id="plVol" min="0" max="100" value="80" title="Volume">
+              </div>
+              <div class="pl-list" id="plList"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="view" data-view="config" hidden>
+      <form class="cfg cfg2" id="cfgForm">
+        <nav class="cfg-nav" id="cfgNav">
+          <button type="button" data-sec="cs-start" class="on">Primeiros passos</button>
+          <button type="button" data-sec="cs-prof">Seu perfil</button>
+          <button type="button" data-sec="cs-ai">Inteligência</button>
+          <button type="button" data-sec="cs-voice">Voz</button>
+          <button type="button" data-sec="cs-app">Aparência e uso</button>
+          <button type="button" data-sec="cs-data">Dados e atualizações</button>
+        </nav>
+        <div class="cfg-body" id="cfgBody">
+
+        <section class="cfg-sec" id="cs-start">
+          <h3>Primeiros passos</h3>
+          <p class="muted">O que falta para o Bit funcionar 100% para você. Os itens marcados como opcionais podem ficar para depois.</p>
+          <div class="setup" id="setupList"></div>
+        </section>
+
+        <section class="cfg-sec" id="cs-prof">
+          <h3>Seu perfil</h3>
+          <p class="muted">O Bit usa isso para entender seus pedidos, saber o que é seu e acertar nomes. Fica só neste computador.</p>
+          <div class="fgrid">
+            <div class="f"><label for="pfNome">Seu nome <b class="req">*</b></label><input id="pfNome" placeholder="Ex.: Ana Souza" autocomplete="off"></div>
+            <div class="f"><label for="pfCargo">O que você faz</label><input id="pfCargo" placeholder="Ex.: Analista de marketing" autocomplete="off"></div>
+            <div class="f"><label for="pfEmpresa">Onde trabalha</label><input id="pfEmpresa" placeholder="Ex.: Empresa X · time de vendas" autocomplete="off"></div>
+            <div class="f"><label for="pfTermos">Palavras do seu dia a dia <small>ajuda a voz</small></label><input id="pfTermos" placeholder="Ex.: CRM, Power BI, nomes de clientes" autocomplete="off"></div>
+            <div class="f wide"><label for="pfSobre">Sobre o seu trabalho <small>responsabilidades e contexto</small></label><textarea id="pfSobre" rows="2" placeholder="Ex.: cuido das campanhas e dos relatórios semanais; atendo pedidos do comercial."></textarea></div>
+            <div class="f"><label for="pfPessoas">Com quem você trabalha <small>uma por linha: Nome — papel</small></label><textarea id="pfPessoas" rows="4" placeholder="Carla — minha gestora&#10;João — comercial"></textarea></div>
+            <div class="f"><label for="pfFrentes">Frentes de trabalho <small>opcional · Nome — o que entra</small></label><textarea id="pfFrentes" rows="4" placeholder="Campanhas — anúncios, e-mails&#10;Relatórios — números semanais"></textarea></div>
+            <div class="f"><label for="pfRegras">Regras e combinados <small>opcional</small></label><textarea id="pfRegras" rows="3" placeholder="Ex.: pedido de outro time passa pela minha gestora."></textarea></div>
+            <div class="f"><label for="pfPrazos">Prazos importantes <small>opcional · DD/MM/AAAA — o quê</small></label><textarea id="pfPrazos" rows="3" placeholder="31/01/2027 — Fechamento do trimestre"></textarea></div>
+          </div>
+          <div class="sec-foot"><button class="btn primary" type="button" id="pfSave">Salvar perfil</button><span class="muted" id="pfMsg"></span></div>
+        </section>
+
+        <section class="cfg-sec" id="cs-ai">
+          <h3>Inteligência</h3>
+          <p class="muted">O Bit usa o <b>Claude Code</b> instalado neste PC, com o limite do <b>seu</b> plano do Claude. Não precisa de chave da Anthropic. O JEV é opcional: sem ele, o Claude Haiku classifica e prioriza.</p>
+          <div class="fgrid">
+            <div class="f"><label for="cfgWrite">Modelo que escreve</label><select id="cfgWrite"><option value="haiku">Haiku (rápido, gasta pouco)</option><option value="sonnet">Sonnet (mais caprichado)</option><option value="opus">Opus (pesado)</option></select></div>
+            <div class="f"><label for="cfgClaudePath">Caminho do Claude Code <small>opcional</small></label><input id="cfgClaudePath" placeholder="detectar sozinho" autocomplete="off"></div>
+            <div class="f"><label for="cfgEngine">Classificar e priorizar com</label><select id="cfgEngine"><option value="auto">JEV (o Haiku assume se o JEV faltar)</option><option value="haiku">Só o Haiku (usa o seu plano)</option></select><span class="muted hint2" id="cfgEngineSt"></span></div>
+            <div class="f"><label for="cfgJev">Chave do JEV <small>opcional · TypeSafe</small></label><input id="cfgJev" type="password" placeholder="cole a chave do console.typesafe.ai" autocomplete="off"><button class="link sm" type="button" id="openConsole">Pegar uma chave</button></div>
+            <div class="f"><label for="cfgJevModel">Modelo do JEV</label><input id="cfgJevModel" list="jevList"><datalist id="jevList"><option value="jev-latest"></option></datalist></div>
+          </div>
+          <div class="sec-foot"><button class="btn" type="button" id="testBtn">Testar conexões</button><span class="muted" id="limitTxt">Limite do plano: aparece depois da 1ª resposta</span></div>
+          <div class="testout" id="testOut" hidden></div>
+        </section>
+
+        <section class="cfg-sec" id="cs-voice">
+          <h3>Voz</h3>
+          <p class="muted">Ditado e transcrição de reuniões com o Whisper, grátis e rodando no seu PC (nada sai do computador).</p>
+          <div class="fgrid">
+            <div class="f"><label for="cfgVoiceModel">Modelo de voz</label><select id="cfgVoiceModel"></select></div>
+            <div class="f"><label>Situação</label><div class="row"><span id="voiceTxt" class="muted">—</span><button class="btn" type="button" id="voiceBtn">Baixar Whisper</button></div></div>
+          </div>
+          <div class="vbar" id="voiceBar" hidden><i id="voiceFill"></i></div>
+          <div class="checks">
+            <label><input type="checkbox" id="cfgVoiceSend"> Enviar direto depois de falar (sem revisar o texto)</label>
+            <label><input type="checkbox" id="cfgVoiceKeep"> Deixar a voz sempre carregada <span class="muted" id="cfgVoiceRam"></span></label>
+          </div>
+          <span class="muted cfg-note">Desligado, o Bit carrega a voz sozinho quando você abre a Reunião, aperta o microfone ou falta pouco para uma reunião da agenda.</span>
+        </section>
+
+        <section class="cfg-sec" id="cs-app">
+          <h3>Aparência e uso</h3>
+          <div class="fgrid">
+            <div class="f"><label for="cfgTheme">Aparência</label><select id="cfgTheme"><option value="claro">Claro</option><option value="escuro">Escuro</option><option value="auto">Igual ao Windows</option></select></div>
+            <div class="f"><label for="cfgFocus">Bloco de foco padrão (min)</label><input id="cfgFocus" type="number" min="5" max="120"></div>
+          </div>
+          <div class="checks">
+            <label><input type="checkbox" id="cfgAuto"> Iniciar junto com o Windows</label>
+            <label><input type="checkbox" id="cfgBlur"> Recolher quando clicar fora</label>
+            <label><input type="checkbox" id="cfgDrag"> Abrir sozinho ao arrastar um arquivo do Explorer ou da Área de Trabalho</label>
+            <label><input type="checkbox" id="cfgGlass"> Vidro nativo do Windows 11 (experimental)</label>
+          </div>
+          <div class="keys">
+            <span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>N</kbd> abrir o Bit</span>
+            <span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>V</kbd> falar</span>
+            <span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>X</kbd> reescrever texto</span>
+            <span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd> histórico do copiar</span>
+          </div>
+        </section>
+
+        <section class="cfg-sec" id="cs-data">
+          <h3>Dados e atualizações</h3>
+          <p class="muted">Tudo o que você guarda no Bit (perfil, demandas, notas, cofre, agenda, reuniões) fica <b>só neste computador</b>, na sua conta do Windows. Nada é enviado para outra pessoa. Senhas e links ficam criptografados pelo Windows.</p>
+          <div class="fgrid">
+            <div class="f"><label>Versão</label><div class="row"><span id="verTxt" class="muted">—</span><button class="btn" type="button" id="updBtn">Procurar atualização</button></div></div>
+            <div class="f"><label for="cfgGh">Token do GitHub <small>só se o repositório for privado</small></label><input id="cfgGh" type="password" placeholder="github_pat_… (só leitura)" autocomplete="off"><button class="link sm" type="button" id="openGh">Gerar um token</button></div>
+          </div>
+          <div class="row wrap">
+            <button class="btn" type="button" id="openData">Abrir a pasta dos meus dados</button>
+            <button class="btn" type="button" id="clearChat">Limpar a conversa atual</button>
+            <span class="grow"></span>
+            <button class="btn stop" type="button" id="quitApp">Fechar o Bit</button>
+          </div>
+        </section>
+        </div>
+        <div class="cfg-save"><span class="muted" id="cfgMsg"></span><span class="grow"></span><button class="btn primary" type="submit">Salvar configurações</button></div>
+      </form>
+    </section>
+  </main>
+
+  <nav class="nav" id="nav">
+    <div class="nav-cap">
+      <button data-tab="home" class="on" data-tip="Início"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></svg></button>
+      <button data-tab="chat" data-tip="Copiloto e conversas"><svg viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="12" rx="4.5"/><path d="M12 7V4M9.5 12v1.5M14.5 12v1.5"/></svg></button>
+      <button data-tab="demandas" data-tip="Demandas"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h7"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg></button>
+      <button data-tab="foco" data-tip="Foco"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg></button>
+      <i class="nav-sep" aria-hidden="true"></i>
+      <button data-tab="t:agenda" data-tip="Agenda e lembretes"><svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span class="recdot ag-dot" id="agDot" hidden></span></button>
+      <button data-tab="t:arquivos" data-tip="Arquivos"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h3.8l2 2h7.2a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></button>
+      <button data-tab="t:notas" data-tip="Notas"><svg viewBox="0 0 24 24"><path d="M6 3.5h8.5L18 7v13.5H6z"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg></button>
+      <button data-tab="t:clip" data-tip="Histórico do copiar (Ctrl+Alt+H)"><svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="12" height="16" rx="2.5"/><path d="M9.5 4.5V3.5h5v1M9 10h6M9 13.5h6M9 17h3.5"/></svg></button>
+      <button data-tab="t:texto" data-tip="Reescrever texto (Ctrl+Alt+X)"><svg viewBox="0 0 24 24"><path d="M5 6h9M5 10h6M5 14h4"/><path d="M14.5 19.5l1-3.5 5-5a1.4 1.4 0 0 1 2 2l-5 5z"/></svg></button>
+      <button data-tab="t:cofre" data-tip="Cofre de senhas"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3M12 14.5v2.5"/></svg></button>
+      <button data-tab="t:reuniao" data-tip="Reunião (gravar e transcrever)"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><span class="recdot" id="recDot" hidden></span></button>
+      <button data-tab="t:musica" data-tip="Música"><svg viewBox="0 0 24 24"><path d="M9 18V5.5l10.5-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/></svg></button>
+    </div>
+  </nav>
+  <div class="dropover" id="dropOver" hidden><span class="face md" aria-hidden="true" data-face></span><div class="dz-txt"><b>Solta aqui que o Bit cuida</b><div class="dz-acts"><span>Converter</span><span>Diminuir</span><span>PDF</span><span>Zip</span><span>Lixeira</span></div></div></div>
+</div>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/pako.min.js"></script>
+<script src="vendor/UPNG.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+<script src="tools.js"></script>
+<script src="extras.js"></script>
+</body>
+</html>

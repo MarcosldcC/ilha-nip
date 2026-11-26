@@ -1,0 +1,7 @@
+pdf-lib 1.17.1 (MIT) - https://github.com/Hopding/pdf-lib
+pdf.js 3.11.174 (Apache-2.0) - https://github.com/mozilla/pdf.js
+UPNG.js 2.1.0 (MIT) - https://github.com/photopea/UPNG.js
+pako 1.0.11 (MIT) - https://github.com/nodeca/pako
+SheetJS xlsx 0.18.5 (Apache-2.0) - https://sheetjs.com
+
+ical.js 1.5.0 (src/vendor/ical.js) — Mozilla Public License 2.0 — https://github.com/kewisch/ical.js

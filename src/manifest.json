@@ -1,0 +1,108 @@
+{
+  "version": "1.19.0",
+  "minShell": 1,
+  "date": "2026-11-26T12:59:06.161Z",
+  "notes": "Configurações novas (menu por seção, se ajusta a janela pequena, Primeiros passos para quem instala do zero); nome de cada item ao passar o mouse na barra lateral; nenhum dado pessoal no código; atualização sem token quando o repositório é público",
+  "files": [
+    {
+      "path": "assets/icon.png",
+      "sha256": "20b349b2768460948def6d7a56624ec7d03fabd5c2bfedb54206b8c7217f2dc5"
+    },
+    {
+      "path": "assets/tray.png",
+      "sha256": "ffaca17a1e23ec8f49ec1e8b9aef806e6bb006a62634926f7a894190dd46b0fe"
+    },
+    {
+      "path": "cc.js",
+      "sha256": "b517f05935c5fece861e7ec18a27e2f6bdb1343fb526f51fbb66962ea0947243"
+    },
+    {
+      "path": "convert.js",
+      "sha256": "f0369156ff5352947754ede6c76092bdb0c47ae05e7b2f7014f4eaaee77dbedf"
+    },
+    {
+      "path": "engine.js",
+      "sha256": "791e7269e19e2f9216b5697d8208b51cde8be41a229c63e350d4ee175f451d49"
+    },
+    {
+      "path": "extras.js",
+      "sha256": "cad2d530f165680b0de33b8ddbf3c2a14d07945fc98432850d5ccbb2fbf4955a"
+    },
+    {
+      "path": "main.js",
+      "sha256": "0736f49a52f920e36cd7f917b83c264ad5111d9aa1d825fe8a037fb6e5182e3b"
+    },
+    {
+      "path": "preload.js",
+      "sha256": "4dc8ce9011c52977421d7ba5feeb186126cc0eb1138c34d8cd842d626fa90ffd"
+    },
+    {
+      "path": "profile.js",
+      "sha256": "af00079abac3b45416309e21f306c508c5548b61f11868aa661480dd1f7108f5"
+    },
+    {
+      "path": "prompts.js",
+      "sha256": "308d489fbda94d1062d3f4720291c570cef9eaec7ba99ea0b0501c51f7f1fbee"
+    },
+    {
+      "path": "renderer/app.js",
+      "sha256": "f7c7311776edaec8314d6aab7d7072fba833ae47962d2ca6d62dc33e24e76c75"
+    },
+    {
+      "path": "renderer/extras.js",
+      "sha256": "e7872999b465e79b0a3bb72d119934990caa918436a2ba6392a2c4dc1423e2da"
+    },
+    {
+      "path": "renderer/index.html",
+      "sha256": "8e05c4f7c90ce49af886825d0e3253d8ea0a81cb5606f289db71ab58616ad334"
+    },
+    {
+      "path": "renderer/style.css",
+      "sha256": "e21706cfbbbe838dabeb685c1ebee37bb564c5175f83446b5414fe345f6b06f0"
+    },
+    {
+      "path": "renderer/tools.js",
+      "sha256": "9894148521ccc5ed88dc9fb3b1687a1e196aed0014082a51adacae3402ed1e72"
+    },
+    {
+      "path": "renderer/vendor/LICENSES.txt",
+      "sha256": "a197f3a26f6d9cb3f97231ddc24af3699db982615cd62860d839d049b825fcfd"
+    },
+    {
+      "path": "renderer/vendor/UPNG.js",
+      "sha256": "b7c0bdb021dffeb82f1ac27c6762f939f967a9e4e0886518fef649331b612164"
+    },
+    {
+      "path": "renderer/vendor/pako.min.js",
+      "sha256": "29cfa0542b9864b6640cfdcc8f15b184db6431b532db2702a3ce97e5f2a7fc1c"
+    },
+    {
+      "path": "renderer/vendor/pdf-lib.min.js",
+      "sha256": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f"
+    },
+    {
+      "path": "renderer/vendor/pdf.min.js",
+      "sha256": "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946"
+    },
+    {
+      "path": "renderer/vendor/pdf.worker.min.js",
+      "sha256": "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b"
+    },
+    {
+      "path": "renderer/vendor/xlsx.full.min.js",
+      "sha256": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99"
+    },
+    {
+      "path": "tools.js",
+      "sha256": "835a5b50ed2b094650df571804294b31be6942f4d6b94526c3ec3a33cddc6715"
+    },
+    {
+      "path": "vendor/ical.js",
+      "sha256": "4d7b766afba7fe3697eb113aebaa354619dc6d454ba189b8a90c04bb92ca1786"
+    },
+    {
+      "path": "voice.js",
+      "sha256": "43c456c64e2a92f4b3c9a0e0014ce775e4ec6c1f1e62ddd99b817cbce11d9cff"
+    }
+  ]
+}
