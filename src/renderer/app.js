@@ -34,7 +34,26 @@ const FULL = {};             // id -> mensagens carregadas
 const LIVE = {};             // id -> { stage, streaming, text }
 let sleeping = false, lastActivity = Date.now();
 const NAME = 'Bit';
-const MODEL_LABEL = { haiku: 'Haiku', sonnet: 'Sonnet', opus: 'Opus' };
+// IA escolhida (Config > Inteligência / Primeiros passos): os níveis haiku/sonnet/opus viram Rápido/Equilibrado/Forte no ChatGPT
+const isGptUI = () => ((typeof S !== 'undefined' && S.settings) || {}).ai === 'chatgpt';
+const aiName = () => (isGptUI() ? 'ChatGPT' : 'Claude');
+const fastName = () => (isGptUI() ? 'ChatGPT' : 'Haiku');
+const LBL = { claude: { haiku: 'Haiku', sonnet: 'Sonnet', opus: 'Opus' }, chatgpt: { haiku: 'Rápido', sonnet: 'Equilibrado', opus: 'Forte' } };
+const MODEL_LABEL = new Proxy({}, { get: (_t, k) => LBL[isGptUI() ? 'chatgpt' : 'claude'][k] });
+function applyAiLabels() {
+  const g = isGptUI();
+  const sub = g ? { haiku: 'Raciocínio leve, gasta pouco', sonnet: 'Bom para quase tudo', opus: 'Pensa mais, gasta mais' } : { haiku: 'Rápido, gasta pouco', sonnet: 'Equilibrado', opus: 'O mais forte, gasta mais' };
+  $$('#nsModel button').forEach(b => { b.innerHTML = `<b>${MODEL_LABEL[b.dataset.v]}</b><small>${sub[b.dataset.v]}</small>`; });
+  $$('#meetModel option').forEach(o => { o.textContent = MODEL_LABEL[o.value]; });
+  const w = { haiku: g ? 'Rápido (gasta pouco)' : 'Haiku (rápido, gasta pouco)', sonnet: g ? 'Equilibrado' : 'Sonnet (mais caprichado)', opus: g ? 'Forte (gasta mais)' : 'Opus (pesado)' };
+  $$('#cfgWrite option').forEach(o => { o.textContent = w[o.value]; });
+  const eo = $('#cfgEngine'); if (eo) { eo.options[0].textContent = `JEV (o ${fastName()} assume se o JEV faltar)`; eo.options[1].textContent = `Só o ${fastName()} (usa o seu plano)`; }
+  const intro = $('#aiIntro'); if (intro) intro.innerHTML = g
+    ? 'O Bit usa o <b>ChatGPT</b> pelo Codex instalado neste PC, com o limite do <b>seu</b> plano do ChatGPT (Plus, Pro, Team…). Não precisa de chave da OpenAI. O JEV é opcional: sem ele, o ChatGPT classifica e prioriza.'
+    : 'O Bit usa o <b>Claude Code</b> instalado neste PC, com o limite do <b>seu</b> plano do Claude. Não precisa de chave da Anthropic. O JEV é opcional: sem ele, o Claude Haiku classifica e prioriza.';
+  syncAiFields();
+}
+function syncAiFields() { const v = ($('#cfgAi') || {}).value || (isGptUI() ? 'chatgpt' : 'claude'); $$('#cs-ai [data-ai]').forEach(x => { x.hidden = x.dataset.ai !== v; }); }
 const STAGE_LABEL = { pesquisando: 'Pesquisando na web…', lendo: 'Lendo uma página…', classificando: 'JEV classificando…', separando: 'Separando demandas…', priorizando: 'JEV priorizando…', escrevendo: 'Escrevendo…' };
 
 // ---------- utilidades ----------
@@ -695,12 +714,12 @@ window.assistSend = assistSend;
 function renderEngine() {
   const e = S.engine || {}, b = $('#engBadge'); if (!b) return;
   const haiku = e.jev && e.jev !== 'ok';
-  b.textContent = haiku ? 'Haiku' : 'JEV + Claude';
+  b.textContent = haiku ? fastName() : `JEV + ${aiName()}`;
   b.className = 'eng' + (haiku ? ' haiku' : '');
-  b.title = haiku ? `${e.reason || ''} Classificação e prioridade estão com o Haiku (seu plano).`.trim() : 'O JEV classifica e prioriza; o Claude escreve.';
+  b.title = haiku ? `${e.reason || ''} Classificação e prioridade estão com o ${fastName()} (seu plano).`.trim() : `O JEV classifica e prioriza; o ${aiName()} escreve.`;
   const st = $('#cfgEngineSt'); if (st) st.textContent = e.jev === 'ok' ? 'JEV funcionando.' : e.jev === 'down' ? `${e.reason} Tento o JEV de novo às ${new Date(e.until).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.` : e.reason || '';
 }
-api.onEngine((e) => { const was = S.engine && S.engine.jev; S.engine = e; renderEngine(); if (was === 'ok' && e.jev === 'down') setState('error', `${e.reason} Sigo com o Haiku.`); });
+api.onEngine((e) => { const was = S.engine && S.engine.jev; S.engine = e; renderEngine(); if (was === 'ok' && e.jev === 'down') setState('error', `${e.reason} Sigo com o ${fastName()}.`); });
 
 api.onSessions((list) => {
   S.sessions = list;
@@ -928,6 +947,10 @@ function fillCfg() {
   $('#cfgEngine').value = s.engine === 'haiku' ? 'haiku' : 'auto';
   $('#cfgWrite').value = ['haiku', 'sonnet', 'opus'].includes(s.writeModel) ? s.writeModel : 'haiku';
   $('#cfgClaudePath').value = s.claudePath || '';
+  $('#cfgAi').value = s.ai === 'chatgpt' ? 'chatgpt' : 'claude';
+  $('#cfgCodexPath').value = s.codexPath || '';
+  const cm = s.codexModels || {}; $('#cfgGptFast').value = cm.haiku || ''; $('#cfgGptMid').value = cm.sonnet || ''; $('#cfgGptStrong').value = cm.opus || '';
+  applyAiLabels();
   $('#cfgAuto').checked = !!s.autostart; $('#cfgBlur').checked = !!s.collapseOnBlur;
   $('#cfgDrag').checked = s.dragDetect !== false; $('#cfgGlass').checked = !!s.glassNative;
   $('#cfgTheme').value = s.theme || 'claro';
@@ -947,23 +970,24 @@ $('#cfgForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const r = await api.saveSettings({
     jevKey: $('#cfgJev').value, ghToken: $('#cfgGh').value, jevModel: $('#cfgJevModel').value.trim() || 'jev-latest', engine: $('#cfgEngine').value, writeModel: $('#cfgWrite').value,
-    claudePath: $('#cfgClaudePath').value.trim(),
+    claudePath: $('#cfgClaudePath').value.trim(), ai: $('#cfgAi').value, codexPath: $('#cfgCodexPath').value.trim(),
+    codexModels: { haiku: $('#cfgGptFast').value.trim(), sonnet: $('#cfgGptMid').value.trim(), opus: $('#cfgGptStrong').value.trim() },
     voiceModel: $('#cfgVoiceModel').value || 'small', voiceAutoSend: $('#cfgVoiceSend').checked, voiceKeep: $('#cfgVoiceKeep').checked,
     autostart: $('#cfgAuto').checked, collapseOnBlur: $('#cfgBlur').checked, dragDetect: $('#cfgDrag').checked, glassNative: $('#cfgGlass').checked, theme: $('#cfgTheme').value, focusMinutes: Math.max(5, Math.min(120, +$('#cfgFocus').value || 25)),
   });
   S.settings = r.settings; S.hasJev = r.hasJev; S.hasGh = r.hasGh; if (r.engine) S.engine = r.engine; fillCfg(); renderEngine(); applyTheme();
   if (!F.running) setFocusMinutes(S.settings.focusMinutes);
-  $('#cfgMsg').textContent = r.hasJev ? 'Salvo.' : 'Salvo. Sem a chave do JEV, o Haiku classifica e prioriza.'; renderSetup();
+  $('#cfgMsg').textContent = r.hasJev ? 'Salvo.' : `Salvo. Sem a chave do JEV, o ${fastName()} classifica e prioriza.`; renderSetup(); renderSessHead();
   if (state === 'error') setState('idle');
   setTimeout(() => $('#cfgMsg').textContent = '', 3500);
 });
 $('#testBtn').addEventListener('click', async () => {
-  const out = $('#testOut'); out.hidden = false; out.innerHTML = '<span class="muted">Testando… o Claude pode levar alguns segundos.</span>';
+  const out = $('#testOut'); out.hidden = false; out.innerHTML = `<span class="muted">Testando… o ${aiName()} pode levar alguns segundos.</span>`;
   $('#testBtn').disabled = true;
   const r = await api.testEngine();
   $('#testBtn').disabled = false;
   const line = (n, x) => `<div><strong>${n}:</strong> <span class="${x.ok ? 'ok' : 'bad'}">${x.ok ? '✓' : '✗'} ${esc(x.msg)}</span>${x.bin ? ` <span class="muted">(${esc(x.bin)})</span>` : ''}</div>`;
-  out.innerHTML = line('Claude Code', r.claude) + line('JEV', r.jev);
+  out.innerHTML = line(r.ai || 'Claude Code', r.claude) + line('JEV', r.jev);
   if (r.limit) renderLimit(r.limit);
 });
 function renderLimit(l) {
@@ -1014,27 +1038,52 @@ $$('#cfgNav [data-sec]').forEach(b => b.addEventListener('click', () => { cfgLoc
   body.addEventListener('scroll', spy, { passive: true });
 })();
 const INSTALL_CMD = 'irm https://claude.ai/install.ps1 | iex';
+const GPT_INSTALL_CMD = 'irm https://chatgpt.com/codex/install.ps1 | iex';
+$('#cfgAi').addEventListener('input', syncAiFields);
+// escolher a IA nos Primeiros passos salva na hora
+async function pickAi(v) {
+  const r = await api.saveSettings({ ai: v });
+  S.settings = r.settings; if (r.engine) S.engine = r.engine; fillCfg(); renderEngine(); renderSessHead(); renderSetup();
+}
 async function renderSetup() {
   const box = $('#setupList'); if (!box) return;
   let st; try { st = await api.setupStatus(); } catch { return; }
   const ok = (b) => b ? '<span class="st ok">✓</span>' : '<span class="st todo"></span>';
   const items = [
     { done: st.profile, t: 'Diga quem você é', d: 'Seu nome e com quem trabalha. É assim que o Bit sabe quais demandas são suas.', a: '<button class="btn sm" type="button" data-go-sec="cs-prof">Preencher</button>' },
-    { done: st.claude === 'ok', t: 'Conectar o Claude', d: st.claude === 'missing' ? `Instale o Claude Code: abra o <b>PowerShell</b>, cole <code>${INSTALL_CMD}</code> e aperte Enter. Depois digite <code>claude</code> e entre com a sua conta do Claude.` : st.claude === 'login' ? 'O Claude Code está instalado. Abra o PowerShell, digite <code>claude</code> e entre com a sua conta do Claude (uma vez só).' : 'Pronto: o Bit usa o seu plano do Claude.', a: st.claude === 'missing' ? `<button class="btn sm" type="button" data-copy="${esc(INSTALL_CMD)}">Copiar comando</button>` : st.claude === 'login' ? '<button class="btn sm" type="button" data-copy="claude">Copiar "claude"</button>' : '<button class="btn sm" type="button" data-test>Testar</button>' },
+    aiStep(st),
+    { skip: true, done: st.claude === 'ok', t: 'Conectar o Claude', d: st.claude === 'missing' ? `Instale o Claude Code: abra o <b>PowerShell</b>, cole <code>${INSTALL_CMD}</code> e aperte Enter. Depois digite <code>claude</code> e entre com a sua conta do Claude.` : st.claude === 'login' ? 'O Claude Code está instalado. Abra o PowerShell, digite <code>claude</code> e entre com a sua conta do Claude (uma vez só).' : 'Pronto: o Bit usa o seu plano do Claude.', a: st.claude === 'missing' ? `<button class="btn sm" type="button" data-copy="${esc(INSTALL_CMD)}">Copiar comando</button>` : st.claude === 'login' ? '<button class="btn sm" type="button" data-copy="claude">Copiar "claude"</button>' : '<button class="btn sm" type="button" data-test>Testar</button>' },
     { done: st.voice, opt: true, t: 'Falar com o Bit (voz)', d: 'Baixa o Whisper (grátis, roda no seu PC) para ditar e transcrever reuniões.', a: '<button class="btn sm" type="button" data-go-sec="cs-voice">Configurar</button>' },
     { done: st.calendars > 0, opt: true, t: 'Conectar sua agenda', d: 'Reuniões do Outlook ou do Google no Bit, com aviso antes de começar.', a: '<button class="btn sm" type="button" data-agenda>Conectar</button>' },
-    { done: st.jev, opt: true, t: 'Chave do JEV', d: 'Classificação extra das demandas. Sem ela, o Haiku faz esse trabalho.', a: '<button class="btn sm" type="button" data-go-sec="cs-ai">Colocar chave</button>' },
+    { done: st.jev, opt: true, t: 'Chave do JEV', d: `Classificação extra das demandas. Sem ela, o ${fastName()} faz esse trabalho.`, a: '<button class="btn sm" type="button" data-go-sec="cs-ai">Colocar chave</button>' },
   ];
-  const need = items.filter(i => !i.opt && !i.done).length;
+  const list = items.filter(i => !i.skip);
+  const need = list.filter(i => !i.opt && !i.done).length;
   box.innerHTML = `<div class="setup-sum ${need ? '' : 'ok'}">${need ? `${need > 1 ? `Faltam <b>${need}</b> passos obrigatórios.` : 'Falta <b>1</b> passo obrigatório.'}` : 'Tudo pronto para usar. Os opcionais você faz quando quiser.'}</div>` +
-    items.map(i => `<div class="setup-it ${i.done ? 'done' : ''}">${ok(i.done)}<div class="si-b"><b>${i.t}${i.opt ? ' <small>opcional</small>' : ''}</b><span>${i.d}</span></div>${i.done && i.opt ? '' : i.a}</div>`).join('');
+    list.map(i => `<div class="setup-it ${i.done ? 'done' : ''}">${ok(i.done)}<div class="si-b"><b>${i.t}${i.opt ? ' <small>opcional</small>' : ''}</b><span>${i.d}</span></div>${i.done && i.opt ? '' : i.a}</div>`).join('');
   box.querySelectorAll('[data-go-sec]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.goSec).scrollIntoView({ behavior: 'smooth' })));
+  box.querySelectorAll('[data-pick-ai]').forEach(b => b.addEventListener('click', () => pickAi(b.dataset.pickAi)));
   box.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', (e) => copy(b.dataset.copy, e.currentTarget)));
   box.querySelectorAll('[data-test]').forEach(b => b.addEventListener('click', () => { $('#testBtn').click(); document.getElementById('cs-ai').scrollIntoView({ behavior: 'smooth' }); }));
   box.querySelectorAll('[data-agenda]').forEach(b => b.addEventListener('click', () => { go('t:agenda'); setTimeout(() => { const c = $('#agCfg'); if (c && c.hidden) $('#agCfgBtn').click(); }, 150); }));
   const nb = $('#cfgBtn'); if (nb) nb.classList.toggle('needs', need > 0);
 }
 window.renderSetup = renderSetup;
+// passo "Escolha a sua IA": Claude ou ChatGPT, e como conectar a escolhida
+function aiStep(st) {
+  const g = st.ai === 'chatgpt';
+  const pick = `<span class="ai-pick"><button class="btn sm ${g ? '' : 'primary'}" type="button" data-pick-ai="claude">Claude</button><button class="btn sm ${g ? 'primary' : ''}" type="button" data-pick-ai="chatgpt">ChatGPT</button></span>`;
+  const s = g ? st.chatgpt : st.claude;
+  const d = g
+    ? (s === 'missing' ? `Instale o Codex (o ChatGPT no PC): abra o <b>PowerShell</b>, cole <code>${GPT_INSTALL_CMD}</code> e aperte Enter. Depois feche e abra o PowerShell, digite <code>codex login</code> e entre com a sua conta do ChatGPT.`
+      : s === 'login' ? 'O Codex está instalado. Abra o PowerShell, digite <code>codex login</code> e entre com a sua conta do ChatGPT (uma vez só).' : 'Pronto: o Bit usa o seu plano do ChatGPT.')
+    : (s === 'missing' ? `Instale o Claude Code: abra o <b>PowerShell</b>, cole <code>${INSTALL_CMD}</code> e aperte Enter. Depois digite <code>claude</code> e entre com a sua conta do Claude.`
+      : s === 'login' ? 'O Claude Code está instalado. Abra o PowerShell, digite <code>claude</code> e entre com a sua conta do Claude (uma vez só).' : 'Pronto: o Bit usa o seu plano do Claude.');
+  const act = s === 'missing' ? `<button class="btn sm" type="button" data-copy="${esc(g ? GPT_INSTALL_CMD : INSTALL_CMD)}">Copiar comando</button>`
+    : s === 'login' ? `<button class="btn sm" type="button" data-copy="${g ? 'codex login' : 'claude'}">Copiar "${g ? 'codex login' : 'claude'}"</button>`
+    : '<button class="btn sm" type="button" data-test>Testar</button>';
+  return { done: s === 'ok', t: 'Escolha a sua IA e conecte', d: `Use o plano que você já assina. ${pick}<br>${d}`, a: act };
+}
 
 // ---------- voz ----------
 const V = { rec: null, stream: null, chunks: [], t0: 0, tick: null, target: null, installing: false };

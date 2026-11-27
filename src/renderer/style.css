@@ -1383,3 +1383,7 @@ mark,.si mark{background:color-mix(in srgb,var(--yellow) 35%,transparent);color:
 
 /* barra lateral em janelas baixas: todos os ícones cabem */
 @media (max-height:620px){.nav-cap{gap:1px}.nav-cap button{height:32px}.nav-cap .nav-sep{margin:2px 0}}
+
+/* escolha da IA nos Primeiros passos */
+.ai-pick{display:inline-flex;gap:6px;margin:6px 0 2px;vertical-align:middle}
+.setup-it .ai-pick .btn{margin-left:0;align-self:auto}

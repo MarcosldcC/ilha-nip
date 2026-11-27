@@ -12,7 +12,7 @@ const tools = require('./tools');
 const cc = require('./cc');
 const conv = require('./convert');
 let toolsHandle = null;
-const { jev, jevPing, runClaude, findClaude } = require('./engine');
+const { jev, jevPing, runClaude, findClaude, runCodex, findCodex, codexLoggedIn } = require('./engine');
 const voice = require('./voice');
 const VOICE_HOTKEY = 'Control+Alt+V';
 
@@ -29,6 +29,9 @@ const DEFAULT_SETTINGS = {
   jevModel: 'jev-latest',
   writeModel: 'haiku',
   claudePath: '',
+  ai: 'claude',            // IA que escreve: 'claude' (Claude Code) ou 'chatgpt' (Codex CLI)
+  codexPath: '',
+  codexModels: { haiku: '', sonnet: '', opus: '' }, // nome do modelo do ChatGPT por nível; vazio = padrão da conta
   autostart: true,
   collapseOnBlur: true,
   focusMinutes: 25,
@@ -302,8 +305,21 @@ function openDemandsSummary() {
 }
 const pct = (x) => (typeof x === 'number' ? Math.round(x * 100) : null);
 
+const isGpt = () => DATA.settings.ai === 'chatgpt';
+const FAST = () => (isGpt() ? 'ChatGPT' : 'Haiku'); // quem classifica quando o JEV não está
+function noAiMsg(e) {
+  const k = e.code || e.message;
+  if (k === 'NO_CLAUDE') return 'Não achei o Claude Code neste PC. Instale (no PowerShell: irm https://claude.ai/install.ps1 | iex), rode "claude" uma vez para fazer login e tente de novo.';
+  if (k === 'NO_CODEX') return 'Não achei o ChatGPT (Codex) neste PC. Instale (no PowerShell: irm https://chatgpt.com/codex/install.ps1 | iex), rode "codex login" uma vez para entrar com a sua conta do ChatGPT e tente de novo.';
+  return null;
+}
+// erros de "não instalado" viram texto explicando como instalar (vale para todas as ferramentas)
 function claude(opts) {
+  return claudeRaw(opts).catch((e) => { const m = noAiMsg(e); throw m ? Object.assign(new Error(m), { code: e.message }) : e; });
+}
+function claudeRaw(opts) {
   if (MOCK) return mockClaude(opts);
+  if (isGpt()) return runCodex({ bin: findCodex(DATA.settings.codexPath), workDir: workDir(), model: DATA.settings.writeModel, models: DATA.settings.codexModels || {}, ...opts });
   return runClaude({ bin: findClaude(DATA.settings.claudePath), workDir: workDir(), model: DATA.settings.writeModel,
     onLimit: (info) => { lastLimit = { ...info, at: Date.now() }; win && win.webContents.send('plan:limit', lastLimit); }, ...opts });
 }
@@ -334,7 +350,7 @@ const JEVST = { downUntil: 0, reason: '' };
 function engineStatus() {
   const mode = DATA.settings.engine === 'haiku' ? 'haiku' : 'auto';
   if (MOCK && !process.env.ILHA_JEV_DOWN) return { mode, jev: mode === 'haiku' ? 'off' : 'ok', reason: '' };
-  if (mode === 'haiku') return { mode, jev: 'off', reason: 'Você escolheu usar só o Haiku.' };
+  if (mode === 'haiku') return { mode, jev: 'off', reason: `Você escolheu usar só o ${FAST()}.` };
   if (!getJevKey() && !MOCK) return { mode, jev: 'nokey', reason: 'Sem chave do JEV.' };
   if (JEVST.downUntil > Date.now()) return { mode, jev: 'down', reason: JEVST.reason, until: JEVST.downUntil };
   return { mode, jev: 'ok', reason: '' };
@@ -446,9 +462,7 @@ ipcMain.handle('chat:send', async (_e, { sessionId, text }) => {
     sess.status = 'done'; sess.unread = true;
     return { ok: true };
   } catch (e) {
-    const err = e.message === 'NO_CLAUDE'
-      ? 'Não achei o Claude Code neste PC. Instale (no PowerShell: irm https://claude.ai/install.ps1 | iex), rode "claude" uma vez para fazer login e tente de novo.'
-      : `Não deu certo: ${e.message}`;
+    const err = noAiMsg(e) || `Não deu certo: ${e.message}`;
     sess.messages.push({ id: uid(), role: 'error', text: err, at: Date.now() });
     sess.status = 'error'; sess.unread = true;
     send('chat:error', { error: err });
@@ -504,11 +518,11 @@ async function addDemands(text, { sessId = null, stage = () => {}, warnings = []
       titulo: it.titulo, prazo: it.prazo || '', proximo_passo: it.proximo_passo || '', responsavel: 'Eu', descricao: String(it.descricao || '').trim(), origem: String(it.trecho || '').trim().slice(0, 1200),
       quem: a.quem?.choice || it.quem || '—', frente: a.frente?.choice || it.frente || '', e_meu: a.e_meu?.choice || it.e_meu || 'sim',
       esforco: a.esforco ? ESFORCO(a.esforco.score) : (it.esforco || 'M'), prioridade: a.prioridade?.choice || it.prioridade || 'semana',
-      confianca: pct(a.prioridade?.confidence), motivo: r.a ? `JEV: ${pct(a.prioridade?.confidence) ?? '?'}% de confiança` : 'prioridade definida pelo Haiku',
+      confianca: pct(a.prioridade?.confidence), motivo: r.a ? `JEV: ${pct(a.prioridade?.confidence) ?? '?'}% de confiança` : `prioridade definida pelo ${FAST()}`,
     };
     if (item.e_meu === 'origem' && item.prioridade !== 'devolver') item.prioridade = 'devolver';
     DATA.demands.unshift(item); added.push(item);
-    if (r.err && r.err.first && !warnings.some(w => w.startsWith(r.err.message))) warnings.push(`${r.err.message} O Haiku assumiu a classificação.`);
+    if (r.err && r.err.first && !warnings.some(w => w.startsWith(r.err.message))) warnings.push(`${r.err.message} O ${FAST()} assumiu a classificação.`);
     else if (r.err && r.err.code !== 'JEV_SKIP' && !warnings.includes(r.err.message)) warnings.push(r.err.message);
   });
   saveData();
@@ -523,13 +537,13 @@ async function runNip(sess, text, send, stage) {
   try {
     const a = await jevCall(`${ctxCurto()}\nHoje: ${hoje()}\n\nMensagem de ${who()}:\n${text}`, PROFILE.qMensagem(prof()));
     tipo = a.tipo?.choice || 'conversa'; tipoConf = pct(a.tipo?.confidence); temDemanda = a.tem_demanda?.noul ?? null;
-  } catch (e) { if (e.first) warnings.push(`${e.message} O Haiku assumiu a classificação.`); else if (e.code !== 'JEV_SKIP') warnings.push(e.message); }
+  } catch (e) { if (e.first) warnings.push(`${e.message} O ${FAST()} assumiu a classificação.`); else if (e.code !== 'JEV_SKIP') warnings.push(e.message); }
 
   // 2) separa e prioriza
   let added = [];
   if (temDemanda == null || temDemanda >= 0.5 || tipo === 'demanda' || tipo === 'plano_dia') added = await addDemands(text, { sessId: sess.id, stage, warnings });
   if (tipoConf == null && added.length && tipo === 'conversa') tipo = 'demanda';
-  const cls = { tipo, resumo: tipoConf != null ? `JEV · ${tipoConf}% de certeza` : 'Haiku', confianca: tipoConf };
+  const cls = { tipo, resumo: tipoConf != null ? `JEV · ${tipoConf}% de certeza` : FAST(), confianca: tipoConf };
   sess.messages.push({ id: uid(), role: 'meta', cls, added, warnings, at: Date.now() });
   saveData();
   send('chat:classified', { cls, added, demands: DATA.demands, warnings });
@@ -628,23 +642,31 @@ ipcMain.handle('profile:get', () => prof());
 ipcMain.handle('profile:save', (_e, p) => { DATA.profile = PROFILE.normalize(p); saveData(); return DATA.profile; });
 
 // o que falta configurar (tela "Primeiros passos")
-ipcMain.handle('setup:status', () => {
+async function gptStatus() {
+  if (MOCK) return { st: 'ok', bin: 'codex' };
+  const bin = findCodex(DATA.settings.codexPath);
+  if (bin === 'codex' || !fs.existsSync(bin)) return { st: 'missing', bin: '' };
+  return { st: (await codexLoggedIn(bin)) ? 'ok' : 'login', bin };
+}
+ipcMain.handle('setup:status', async () => {
   const bin = findClaude(DATA.settings.claudePath);
   const found = MOCK || (bin !== 'claude' && fs.existsSync(bin));
   const home = require('os').homedir();
   const logged = MOCK || fs.existsSync(path.join(home, '.claude', '.credentials.json')) || (() => { try { return !!JSON.parse(fs.readFileSync(path.join(home, '.claude.json'), 'utf8')).oauthAccount; } catch { return false; } })();
   const vs = MOCK ? { ready: false } : voice.status(voiceRoot(), DATA.settings.voiceModel);
-  return { profile: !!(DATA.profile && DATA.profile.nome), claude: found ? (logged ? 'ok' : 'login') : 'missing', claudePath: found ? bin : '', voice: !!vs.ready, calendars: (DATA.calendars || []).length, jev: !!getJevKey(), engine: engineStatus() };
+  const gpt = isGpt() ? await gptStatus() : { st: 'missing', bin: '' };
+  return { profile: !!(DATA.profile && DATA.profile.nome), ai: isGpt() ? 'chatgpt' : 'claude', claude: found ? (logged ? 'ok' : 'login') : 'missing', claudePath: found ? bin : '', chatgpt: gpt.st, chatgptPath: gpt.bin, voice: !!vs.ready, calendars: (DATA.calendars || []).length, jev: !!getJevKey(), engine: engineStatus() };
 });
 ipcMain.on('data:open', () => shell.openPath(dataDir()));
 ipcMain.handle('engine:test', async () => {
   const out = { claude: null, jev: null };
   try {
-    const bin = findClaude(DATA.settings.claudePath);
+    const bin = isGpt() ? findCodex(DATA.settings.codexPath) : findClaude(DATA.settings.claudePath);
     const t0 = Date.now();
     const r = await claude({ system: 'Responda apenas: OK', prompt: 'teste', timeoutMs: 60000 });
     out.claude = { ok: true, msg: `respondeu "${r.trim().slice(0, 20)}" em ${((Date.now() - t0) / 1000).toFixed(1)}s`, bin };
-  } catch (e) { out.claude = { ok: false, msg: e.message === 'NO_CLAUDE' ? 'Claude Code não instalado (ou não encontrado). No PowerShell: irm https://claude.ai/install.ps1 | iex — depois rode "claude" uma vez para fazer login e teste de novo.' : e.message }; }
+  } catch (e) { out.claude = { ok: false, msg: e.message }; }
+  out.ai = isGpt() ? 'ChatGPT (Codex)' : 'Claude Code';
   try {
     if (MOCK) out.jev = { ok: true, msg: 'modo teste' };
     else if (!getJevKey()) out.jev = { ok: false, msg: 'sem chave' };
@@ -736,7 +758,7 @@ ipcMain.handle('cc:send', async (_e, { id, text, perm, model }) => {
     send('cc:done', { text: full });
     return { ok: true };
   } catch (e) {
-    const err = e.message === 'NO_CLAUDE' ? 'Não achei o Claude Code neste PC (veja Config > Testar conexões).' : e.killed ? 'Parado.' : e.message;
+    const err = (e.code || e.message) === 'NO_CLAUDE' ? 'Não achei o Claude Code neste PC (veja Config > Testar conexões).' : e.killed ? 'Parado.' : e.message;
     send('cc:error', { error: err });
     return { ok: false, error: err };
   } finally {

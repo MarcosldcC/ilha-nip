@@ -1,8 +1,8 @@
 {
-  "version": "1.19.0",
+  "version": "1.20.0",
   "minShell": 1,
-  "date": "2026-11-26T12:59:06.161Z",
-  "notes": "Configurações novas (menu por seção, se ajusta a janela pequena, Primeiros passos para quem instala do zero); nome de cada item ao passar o mouse na barra lateral; nenhum dado pessoal no código; atualização sem token quando o repositório é público",
+  "date": "2026-11-27T10:41:57.593Z",
+  "notes": "Escolha entre Claude e ChatGPT (Codex) nos Primeiros passos e na Config, com modelos Rápido/Equilibrado/Forte",
   "files": [
     {
       "path": "assets/icon.png",
@@ -22,7 +22,7 @@
     },
     {
       "path": "engine.js",
-      "sha256": "791e7269e19e2f9216b5697d8208b51cde8be41a229c63e350d4ee175f451d49"
+      "sha256": "a242412587ff27657faf16e3ea4d640d67cb6c0152e854f8cdfe99c0a9f551b4"
     },
     {
       "path": "extras.js",
@@ -30,7 +30,7 @@
     },
     {
       "path": "main.js",
-      "sha256": "0736f49a52f920e36cd7f917b83c264ad5111d9aa1d825fe8a037fb6e5182e3b"
+      "sha256": "a20346776dbfd693285e4270eb5939129023cb7d6ffe219653ba261b560b5595"
     },
     {
       "path": "preload.js",
@@ -46,7 +46,7 @@
     },
     {
       "path": "renderer/app.js",
-      "sha256": "f7c7311776edaec8314d6aab7d7072fba833ae47962d2ca6d62dc33e24e76c75"
+      "sha256": "7e8c3fee11d189186daaf723ec6a22f6b3073319716c0239d9a3affe1ca2a408"
     },
     {
       "path": "renderer/extras.js",
@@ -54,11 +54,11 @@
     },
     {
       "path": "renderer/index.html",
-      "sha256": "8e05c4f7c90ce49af886825d0e3253d8ea0a81cb5606f289db71ab58616ad334"
+      "sha256": "5222bfb61bcc066645a3083a40268cf36609447502fbb6730a6088a002434ed2"
     },
     {
       "path": "renderer/style.css",
-      "sha256": "e21706cfbbbe838dabeb685c1ebee37bb564c5175f83446b5414fe345f6b06f0"
+      "sha256": "c9dce3b208c63ef122f2cd458db9817e25b9beca89bc5aef48a5512d35be1556"
     },
     {
       "path": "renderer/tools.js",

@@ -407,10 +407,15 @@
 
         <section class="cfg-sec" id="cs-ai">
           <h3>Inteligência</h3>
-          <p class="muted">O Bit usa o <b>Claude Code</b> instalado neste PC, com o limite do <b>seu</b> plano do Claude. Não precisa de chave da Anthropic. O JEV é opcional: sem ele, o Claude Haiku classifica e prioriza.</p>
+          <p class="muted" id="aiIntro">O Bit usa o <b>Claude Code</b> instalado neste PC, com o limite do <b>seu</b> plano do Claude. Não precisa de chave da Anthropic. O JEV é opcional: sem ele, o Claude Haiku classifica e prioriza.</p>
           <div class="fgrid">
+            <div class="f"><label for="cfgAi">IA que escreve</label><select id="cfgAi"><option value="claude">Claude (plano do Claude)</option><option value="chatgpt">ChatGPT (plano do ChatGPT)</option></select></div>
             <div class="f"><label for="cfgWrite">Modelo que escreve</label><select id="cfgWrite"><option value="haiku">Haiku (rápido, gasta pouco)</option><option value="sonnet">Sonnet (mais caprichado)</option><option value="opus">Opus (pesado)</option></select></div>
-            <div class="f"><label for="cfgClaudePath">Caminho do Claude Code <small>opcional</small></label><input id="cfgClaudePath" placeholder="detectar sozinho" autocomplete="off"></div>
+            <div class="f" data-ai="claude"><label for="cfgClaudePath">Caminho do Claude Code <small>opcional</small></label><input id="cfgClaudePath" placeholder="detectar sozinho" autocomplete="off"></div>
+            <div class="f" data-ai="chatgpt"><label for="cfgCodexPath">Caminho do Codex <small>opcional</small></label><input id="cfgCodexPath" placeholder="detectar sozinho" autocomplete="off"></div>
+            <div class="f" data-ai="chatgpt"><label for="cfgGptFast">Modelo rápido <small>opcional · em branco = padrão da conta</small></label><input id="cfgGptFast" placeholder="padrão da conta (raciocínio baixo)" autocomplete="off"></div>
+            <div class="f" data-ai="chatgpt"><label for="cfgGptMid">Modelo equilibrado <small>opcional</small></label><input id="cfgGptMid" placeholder="padrão da conta (raciocínio médio)" autocomplete="off"></div>
+            <div class="f" data-ai="chatgpt"><label for="cfgGptStrong">Modelo forte <small>opcional</small></label><input id="cfgGptStrong" placeholder="padrão da conta (raciocínio alto)" autocomplete="off"></div>
             <div class="f"><label for="cfgEngine">Classificar e priorizar com</label><select id="cfgEngine"><option value="auto">JEV (o Haiku assume se o JEV faltar)</option><option value="haiku">Só o Haiku (usa o seu plano)</option></select><span class="muted hint2" id="cfgEngineSt"></span></div>
             <div class="f"><label for="cfgJev">Chave do JEV <small>opcional · TypeSafe</small></label><input id="cfgJev" type="password" placeholder="cole a chave do console.typesafe.ai" autocomplete="off"><button class="link sm" type="button" id="openConsole">Pegar uma chave</button></div>
             <div class="f"><label for="cfgJevModel">Modelo do JEV</label><input id="cfgJevModel" list="jevList"><datalist id="jevList"><option value="jev-latest"></option></datalist></div>
