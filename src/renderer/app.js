@@ -974,6 +974,8 @@ function fillCfg() {
 }
 $('#cfgForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (window.saveBotPending) await window.saveBotPending();
+  if ($('#pfNome').value.trim()) await saveProfile(); // o perfil também vale pelo botão de baixo
   const r = await api.saveSettings({
     jevKey: $('#cfgJev').value, ghToken: $('#cfgGh').value, jevModel: $('#cfgJevModel').value.trim() || 'jev-latest', engine: $('#cfgEngine').value, writeModel: $('#cfgWrite').value,
     claudePath: $('#cfgClaudePath').value.trim(), ai: $('#cfgAi').value, codexPath: $('#cfgCodexPath').value.trim(),

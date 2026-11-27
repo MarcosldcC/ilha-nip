@@ -18,7 +18,14 @@
   applyAccent();
 
   async function saveAccent(c) { const r = await api.saveSettings({ accent: c }); S.settings = r.settings; applyAccent(); paintSwatches(); }
-  async function saveBotName(n) { S.profile = await api.profileSave({ ...S.profile, bot: n }); window.renderBar && window.renderBar(); }
+  let botSaving = null;
+  function saveBotName(n) {
+    n = String(n || '').replace(/\s+/g, ' ').trim();
+    if (n === ((S.profile && S.profile.bot) || '') && !botSaving) return Promise.resolve();
+    botSaving = api.profileSave({ bot: n }).then((p) => { S.profile = p; botSaving = null; window.renderBar && window.renderBar(); setState('seen', `Pronto! Agora eu sou o ${botName()}.`); });
+    return botSaving;
+  }
+  window.saveBotPending = () => botSaving || Promise.resolve();
   const swatchesHtml = (id) => `<div class="swatches" id="${id}" role="radiogroup" aria-label="Cor do copiloto">${ACCENTS.map(([v, l, show]) => `<button type="button" role="radio" class="sw-c" data-c="${v}" title="${l}" aria-label="${l}" style="--c:${v || show}"></button>`).join('')}</div>`;
   function paintSwatches() { const cur = (S.settings && S.settings.accent) || ''; $$('.sw-c').forEach(b => { const on = b.dataset.c === cur; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); }
   function wireSwatches(root) { root.querySelectorAll('.sw-c').forEach(b => b.addEventListener('click', () => saveAccent(b.dataset.c))); paintSwatches(); }
@@ -32,9 +39,13 @@
     sec.after(box);
     const inp = $('#cfgBotName');
     inp.value = (S.profile && S.profile.bot) || '';
-    inp.addEventListener('change', () => saveBotName(inp.value));
+    let t = null;
+    inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => saveBotName(inp.value), 700); });
+    inp.addEventListener('change', () => { clearTimeout(t); saveBotName(inp.value); });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(t); saveBotName(inp.value); } });
     wireSwatches(box);
-    window.fillLook = () => { inp.value = (S.profile && S.profile.bot) || ''; paintSwatches(); };
+    // não troca o texto enquanto a pessoa digita ou enquanto ainda está salvando
+    window.fillLook = () => { if (document.activeElement !== inp && !botSaving) inp.value = (S.profile && S.profile.bot) || ''; paintSwatches(); };
   })();
 
   // ---------- passo a passo ----------

@@ -1,8 +1,8 @@
 {
-  "version": "1.21.0",
+  "version": "1.21.1",
   "minShell": 1,
-  "date": "2026-11-27T18:41:50.821Z",
-  "notes": "Passo a passo de boas-vindas (assinatura, login com um clique, perfil, agenda, downloads), nome e cor do copiloto, calculadora rápida",
+  "date": "2026-11-27T19:11:40.304Z",
+  "notes": "Nome do copiloto e do perfil salvam de primeira (e salvar o perfil não apaga mais o nome do copiloto)",
   "files": [
     {
       "path": "assets/icon.png",
@@ -30,7 +30,7 @@
     },
     {
       "path": "main.js",
-      "sha256": "f5030f6142a849eb26c67988fc361b5157f0f4388d38286ab4d5468c7d812657"
+      "sha256": "b91459eff1b3c8859ba7d9567c01ff283c49507802afbce3e0cf72a23f8be8de"
     },
     {
       "path": "preload.js",
@@ -46,7 +46,7 @@
     },
     {
       "path": "renderer/app.js",
-      "sha256": "01c6e86f7e1c8aa32440e6aad8eb63a898febe4791cfd32f59a22395b396774c"
+      "sha256": "1567b18dab5011a1a9a5c252456f443bf78e3fd758c84b19d627d0b7f9e5a7b5"
     },
     {
       "path": "renderer/calc.js",
@@ -98,7 +98,7 @@
     },
     {
       "path": "renderer/wizard.js",
-      "sha256": "150ea36b19cef74d984e3622389972db0d9ab4f42fa7c5e6f86e9924b8c1f54b"
+      "sha256": "fd50b9643b9befb600e45370c367e0f4dfec4b3958c590c51e986a2480617add"
     },
     {
       "path": "tools.js",

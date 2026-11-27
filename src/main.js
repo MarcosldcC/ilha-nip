@@ -639,7 +639,7 @@ ipcMain.handle('assist:undo', (_e, { tipo, id }) => {
 });
 ipcMain.handle('engine:get', () => engineStatus());
 ipcMain.handle('profile:get', () => prof());
-ipcMain.handle('profile:save', (_e, p) => { DATA.profile = PROFILE.normalize(p); saveData(); return DATA.profile; });
+ipcMain.handle('profile:save', (_e, p) => { DATA.profile = PROFILE.normalize({ ...(DATA.profile || {}), ...(p || {}) }); saveData(); return DATA.profile; });
 
 // o que falta configurar (tela "Primeiros passos")
 async function gptStatus() {
