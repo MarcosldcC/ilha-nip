@@ -1,8 +1,8 @@
 {
-  "version": "1.20.0",
+  "version": "1.21.0",
   "minShell": 1,
-  "date": "2026-11-27T10:41:57.593Z",
-  "notes": "Escolha entre Claude e ChatGPT (Codex) nos Primeiros passos e na Config, com modelos Rápido/Equilibrado/Forte",
+  "date": "2026-11-27T18:41:50.821Z",
+  "notes": "Passo a passo de boas-vindas (assinatura, login com um clique, perfil, agenda, downloads), nome e cor do copiloto, calculadora rápida",
   "files": [
     {
       "path": "assets/icon.png",
@@ -30,23 +30,27 @@
     },
     {
       "path": "main.js",
-      "sha256": "a20346776dbfd693285e4270eb5939129023cb7d6ffe219653ba261b560b5595"
+      "sha256": "f5030f6142a849eb26c67988fc361b5157f0f4388d38286ab4d5468c7d812657"
     },
     {
       "path": "preload.js",
-      "sha256": "4dc8ce9011c52977421d7ba5feeb186126cc0eb1138c34d8cd842d626fa90ffd"
+      "sha256": "cedd017a8e1405db9ce050a6c71efa6aaee07a5a74339e6f32011363a3a5ca9b"
     },
     {
       "path": "profile.js",
-      "sha256": "af00079abac3b45416309e21f306c508c5548b61f11868aa661480dd1f7108f5"
+      "sha256": "a8161dd7e1ec551edb73aca3b70db720c1ab194e60f04f24944e53b7e3004d88"
     },
     {
       "path": "prompts.js",
-      "sha256": "308d489fbda94d1062d3f4720291c570cef9eaec7ba99ea0b0501c51f7f1fbee"
+      "sha256": "fe53ce595652522736092e6d5dc02ea19ea0144f0024cf8114b05b05a40cafda"
     },
     {
       "path": "renderer/app.js",
-      "sha256": "7e8c3fee11d189186daaf723ec6a22f6b3073319716c0239d9a3affe1ca2a408"
+      "sha256": "01c6e86f7e1c8aa32440e6aad8eb63a898febe4791cfd32f59a22395b396774c"
+    },
+    {
+      "path": "renderer/calc.js",
+      "sha256": "f7110f7ec98beeb8dd1ce56524ec638ce9c7426d0df7af836b13d8cd6285b8a7"
     },
     {
       "path": "renderer/extras.js",
@@ -54,15 +58,15 @@
     },
     {
       "path": "renderer/index.html",
-      "sha256": "5222bfb61bcc066645a3083a40268cf36609447502fbb6730a6088a002434ed2"
+      "sha256": "074ff7849ec5359c7ef45c88772f98b63a2ace3c3bd7fd54c7f3e74fa0df48c5"
     },
     {
       "path": "renderer/style.css",
-      "sha256": "c9dce3b208c63ef122f2cd458db9817e25b9beca89bc5aef48a5512d35be1556"
+      "sha256": "76c74275417c84225c46e7e72ba0c6944e23e7cb5fab8b0d5d7e348bc9c39c36"
     },
     {
       "path": "renderer/tools.js",
-      "sha256": "9894148521ccc5ed88dc9fb3b1687a1e196aed0014082a51adacae3402ed1e72"
+      "sha256": "04313ee6d5a5d83af1d0e9b79fe33938ad218f5117d0901d72f5d29822a740fa"
     },
     {
       "path": "renderer/vendor/LICENSES.txt",
@@ -91,6 +95,10 @@
     {
       "path": "renderer/vendor/xlsx.full.min.js",
       "sha256": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99"
+    },
+    {
+      "path": "renderer/wizard.js",
+      "sha256": "150ea36b19cef74d984e3622389972db0d9ab4f42fa7c5e6f86e9924b8c1f54b"
     },
     {
       "path": "tools.js",

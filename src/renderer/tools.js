@@ -20,6 +20,7 @@
     if (t === 'cofre') loadVault();
     if (t === 'reuniao') { loadMeetings(); api.voiceWarm(); }
     if (t === 'musica') loadPlaylist();
+    if (t === 'calc' && window.calcOpen) window.calcOpen();
   }
   window.showTool = showTool;
   window.currentTool = () => tool;

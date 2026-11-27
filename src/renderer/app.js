@@ -33,7 +33,8 @@ let cur = null;              // sessão aberta
 const FULL = {};             // id -> mensagens carregadas
 const LIVE = {};             // id -> { stage, streaming, text }
 let sleeping = false, lastActivity = Date.now();
-const NAME = 'Bit';
+// nome do copiloto (perfil > Personalizar); o padrão é Bit
+const botName = () => ((typeof S !== 'undefined' && S.profile && S.profile.bot) || 'Bit');
 // IA escolhida (Config > Inteligência / Primeiros passos): os níveis haiku/sonnet/opus viram Rápido/Equilibrado/Forte no ChatGPT
 const isGptUI = () => ((typeof S !== 'undefined' && S.settings) || {}).ai === 'chatgpt';
 const aiName = () => (isGptUI() ? 'ChatGPT' : 'Claude');
@@ -140,9 +141,9 @@ function updateFace() {
     big = u.status === 'error' ? 'Deu ruim' : 'Respondi!';
     sub = unread.length > 1 ? `${unread.length} sessões com novidade` : u.title;
   } else {
-    label = NAME; big = m === 'sleep' ? 'Cochilando…' : 'Tudo em dia'; sub = 'Manda o que chegou';
+    label = botName(); big = m === 'sleep' ? 'Cochilando…' : 'Tudo em dia'; sub = 'Manda o que chegou';
   }
-  const bl = $('#barLabel'); bl.textContent = label; bl.classList.toggle('name', label === NAME);
+  const bl = $('#barLabel'); bl.textContent = label; bl.classList.toggle('name', label === botName());
   $('#tcBig').textContent = big; $('#tcSub').textContent = sub;
   const tile = $('#tileCopiloto');
   tile.classList.remove('working', 'done', 'seen', 'error', 'listening', 'transcribing');
@@ -234,6 +235,7 @@ const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
 function applyTheme() {
   const t = (S.settings && S.settings.theme) || 'claro';
   document.documentElement.dataset.theme = t === 'auto' ? (darkMQ.matches ? 'dark' : 'light') : t === 'escuro' ? 'dark' : 'light';
+  window.applyAccent && window.applyAccent();
 }
 darkMQ.addEventListener('change', applyTheme);
 $('#cfgTheme').addEventListener('change', () => { S.settings.theme = $('#cfgTheme').value; applyTheme(); });
@@ -676,7 +678,10 @@ async function assistSend(text) {
     // atalho instantâneo: "me lembra de X às 15h" / "anota: X" (sem gastar o Claude)
     const multi = /\s(e|depois)\s+(me\s+)?(lembr|anot|cri|abr|marc|coloc|adicion)/i.test(text);
     const rm = !multi && /^(me\s+)?(lembr|avis|lembrete)/i.test(text) && window.remParse ? window.remParse(text) : null;
-    if (rm) {
+    const cc = !rm && !multi && window.calcLooksLikeMath && window.calcLooksLikeMath(text) ? window.calcEval(text) : null;
+    if (cc) {
+      Object.assign(item, { pending: false, r: `**= ${cc.text}**` });
+    } else if (rm) {
       const list = await api.remAdd({ text: rm.text, at: rm.at, repeat: rm.repeat }); const r = list[list.length - 1];
       Object.assign(item, { pending: false, r: rm.guess ? 'Coloquei às 9h. Se quiser outro horário, é só me dizer.' : '', feitos: [{ tipo: 'lembrete', id: r.id, texto: r.text, at: r.at, repeat: r.repeat }] });
     } else if (!multi && /^(anot[ae]|nota\s*:)/i.test(text)) {
@@ -965,6 +970,7 @@ function fillCfg() {
   const ram = () => { const m = vm[$('#cfgVoiceModel').value] || {}; $('#cfgVoiceRam').textContent = m.ram ? `(usa ${m.ram} de memória o tempo todo)` : ''; };
   ram(); $('#cfgVoiceModel').onchange = null; $('#cfgVoiceModel').addEventListener('input', ram);
   refreshVoice();
+  window.fillLook && window.fillLook();
 }
 $('#cfgForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1069,6 +1075,7 @@ async function renderSetup() {
   const nb = $('#cfgBtn'); if (nb) nb.classList.toggle('needs', need > 0);
 }
 window.renderSetup = renderSetup;
+$('#wizAgain').addEventListener('click', () => window.wizardOpen && window.wizardOpen('ia'));
 // passo "Escolha a sua IA": Claude ou ChatGPT, e como conectar a escolhida
 function aiStep(st) {
   const g = st.ai === 'chatgpt';
@@ -1212,7 +1219,8 @@ $$('.mic').forEach(b => b.addEventListener('click', () => toggleVoice(b.closest(
   const oi = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   if (S.boot?.update?.status === 'updated') setState('seen', `Fui atualizado para v${S.boot.version}!`);
   else setState('seen', S.profile && S.profile.nome ? `${oi}, ${S.profile.nome}!` : `${oi}!`);
-  if (!S.settings.setupDone || !(S.profile && S.profile.nome)) { setState('seen', 'Oi! Eu sou o Bit. Me conta quem é você'); go('config'); setTimeout(() => $('#pfNome').focus(), 200); if (!S.settings.setupDone) { const r = await api.saveSettings({ setupDone: true }); S.settings = r.settings; } }
+  // 1ª vez (ou perfil sem nome): passo a passo de boas-vindas
+  if (!S.settings.setupDone || !(S.profile && S.profile.nome)) { setState('seen', `Oi! Eu sou o ${botName()}. Vamos começar?`); if (window.wizardOpen) window.wizardOpen('oi'); else { window.__wizPending = 'oi'; go('config'); } }
   else {
     if (S.meta.lastMorning !== today() && h >= 6 && h < 12) { setState('seen', 'Bom dia! Despeja o dia aqui'); S.meta = await api.setMeta({ lastMorning: today() }); }
     go('home');

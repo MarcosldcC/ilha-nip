@@ -417,7 +417,7 @@ function pub(s) {
 function emitSessions() { win && !win.isDestroyed() && win.webContents.send('sessions:changed', DATA.sessions.map(pub)); }
 function transcript(sess, n = 10) {
   return sess.messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-n)
-    .map(m => `${m.role === 'user' ? who() : 'Bit'}: ${m.text}`).join('\n\n');
+    .map(m => `${m.role === 'user' ? who() : PROFILE.bot(prof())}: ${m.text}`).join('\n\n');
 }
 
 ipcMain.handle('sessions:list', () => DATA.sessions.map(pub));
@@ -472,7 +472,7 @@ ipcMain.handle('chat:send', async (_e, { sessionId, text }) => {
     sess.messages = sess.messages.slice(-300);
     saveData(); emitSessions();
     if (mode !== 'expanded' && Notification.isSupported()) {
-      new Notification({ title: `Bit · ${sess.title}`, body: sess.status === 'error' ? 'Deu um problema. Abra para ver.' : 'Resposta pronta. Ctrl+Alt+N para abrir.', silent: true }).show();
+      new Notification({ title: `${PROFILE.bot(prof())} · ${sess.title}`, body: sess.status === 'error' ? 'Deu um problema. Abra para ver.' : 'Resposta pronta. Ctrl+Alt+N para abrir.', silent: true }).show();
     }
   }
 });
@@ -483,7 +483,7 @@ async function runGeral(sess, text, send, stage) {
   send('chat:start', { id: replyId });
   // a mensagem vai pura; o histórico vai nas instruções (o Haiku erra mais quando a pergunta vem embrulhada)
   const prev = sess.messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(0, -1).slice(-14)
-    .map(m => `${m.role === 'user' ? who() : 'Bit'}: ${m.text}`).join('\n\n');
+    .map(m => `${m.role === 'user' ? who() : PROFILE.bot(prof())}: ${m.text}`).join('\n\n');
   const system = `${PR.systemGeral(prof())}\n\nHoje é ${hoje()}.${prev ? `\n\n## Conversa anterior nesta sessão (contexto; responda só à nova mensagem)\n${prev}` : ''}`;
   const full = await claude({ model: sess.model, system, prompt: text, timeoutMs: 300000,
     tools: 'WebSearch,WebFetch', allowedTools: 'WebSearch WebFetch',
@@ -555,7 +555,7 @@ async function runNip(sess, text, send, stage) {
   const FR = Object.fromEntries(prof().frentes.map(x => [x.id, x.nome])); FR.fora = 'fora das frentes';
   const novas = added.map(d => `- ${d.titulo} → ${d.prioridade} (quem: ${d.quem}, frente: ${FR[d.frente] || d.frente}, é dele: ${d.e_meu}, esforço ${d.esforco}, prazo: ${d.prazo || '—'}, próximo passo: ${d.proximo_passo})`).join('\n') || 'nenhuma';
   const prev = sess.messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(0, -1).slice(-8)
-    .map(m => `${m.role === 'user' ? who() : 'Bit'}: ${m.text}`).join('\n\n');
+    .map(m => `${m.role === 'user' ? who() : PROFILE.bot(prof())}: ${m.text}`).join('\n\n');
   const system = `${PR.systemCopiloto(prof())}
 
 ## Contexto desta mensagem
@@ -655,9 +655,43 @@ ipcMain.handle('setup:status', async () => {
   const logged = MOCK || fs.existsSync(path.join(home, '.claude', '.credentials.json')) || (() => { try { return !!JSON.parse(fs.readFileSync(path.join(home, '.claude.json'), 'utf8')).oauthAccount; } catch { return false; } })();
   const vs = MOCK ? { ready: false } : voice.status(voiceRoot(), DATA.settings.voiceModel);
   const gpt = isGpt() ? await gptStatus() : { st: 'missing', bin: '' };
-  return { profile: !!(DATA.profile && DATA.profile.nome), ai: isGpt() ? 'chatgpt' : 'claude', claude: found ? (logged ? 'ok' : 'login') : 'missing', claudePath: found ? bin : '', chatgpt: gpt.st, chatgptPath: gpt.bin, voice: !!vs.ready, calendars: (DATA.calendars || []).length, jev: !!getJevKey(), engine: engineStatus() };
+  const mockAi = MOCK && process.env.ILHA_MOCK_AI; // teste: ILHA_MOCK_AI=missing|login mostra a tela de conectar
+  return { profile: !!(DATA.profile && DATA.profile.nome), ai: isGpt() ? 'chatgpt' : 'claude', claude: mockAi || (found ? (logged ? 'ok' : 'login') : 'missing'), claudePath: found ? bin : '', chatgpt: mockAi || gpt.st, chatgptPath: gpt.bin, voice: !!vs.ready, calendars: (DATA.calendars || []).length, jev: !!getJevKey(), engine: engineStatus() };
 });
 ipcMain.on('data:open', () => shell.openPath(dataDir()));
+
+// "Instalar e entrar" do passo a passo: abre uma janela do PowerShell que instala a IA (se faltar) e abre o login.
+// O login é sempre da própria pessoa (navegador oficial do Claude ou do ChatGPT); o Bit só confere depois se deu certo.
+ipcMain.handle('ai:connect', (_e, ai) => {
+  if (MOCK) return { ok: true, mock: true };
+  if (process.platform !== 'win32') return { ok: false, error: 'Só no Windows por enquanto.' };
+  const gpt = ai === 'chatgpt';
+  const bin = gpt ? findCodex(DATA.settings.codexPath) : findClaude(DATA.settings.claudePath);
+  const have = bin !== (gpt ? 'codex' : 'claude') && fs.existsSync(bin);
+  const say = (t) => `Write-Host "${t}" -ForegroundColor Cyan`;
+  const ps = gpt ? [
+    say('Bit: conectando o ChatGPT (Codex).'),
+    ...(have ? [] : [say('Instalando o Codex... (leva 1 ou 2 minutos)'), 'irm https://chatgpt.com/codex/install.ps1 | iex']),
+    `$c = "${have ? bin : ''}"; if (-not $c -or -not (Test-Path $c)) { $c = Join-Path $env:LOCALAPPDATA 'Programs/OpenAI/Codex/bin/codex.exe' }; if (-not (Test-Path $c)) { $c = 'codex' }`,
+    say('Agora o navegador vai abrir: entre com a sua conta do ChatGPT.'),
+    '& $c login',
+    say('Pronto! Pode fechar esta janela e voltar para o Bit.'),
+  ] : [
+    say('Bit: conectando o Claude (Claude Code).'),
+    ...(have ? [] : [say('Instalando o Claude Code... (leva 1 ou 2 minutos)'), 'irm https://claude.ai/install.ps1 | iex']),
+    `$c = "${have ? bin : ''}"; if (-not $c -or -not (Test-Path $c)) { $c = Join-Path $env:USERPROFILE '.local/bin/claude.exe' }; if (-not (Test-Path $c)) { $c = 'claude' }`,
+    say('O Claude vai abrir aqui: aperte Enter nas perguntas e escolha entrar com a sua conta do Claude (abre o navegador).'),
+    say('Quando aparecer a tela de conversa do Claude, o login está feito: pode fechar esta janela.'),
+    '& $c',
+  ];
+  const { spawn } = require('child_process');
+  const enc = Buffer.from(ps.join('\n'), 'utf16le').toString('base64');
+  try {
+    const ch = spawn('powershell.exe', ['-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', enc], { detached: true, stdio: 'ignore', windowsHide: false });
+    ch.unref();
+    return { ok: true, installing: !have };
+  } catch (e) { return { ok: false, error: e.message }; }
+});
 ipcMain.handle('engine:test', async () => {
   const out = { claude: null, jev: null };
   try {

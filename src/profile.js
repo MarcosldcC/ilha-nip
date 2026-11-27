@@ -1,7 +1,7 @@
 // Perfil de quem usa o Bit: nome, time, frentes, regras e prazos vêm daqui (nada disso fica no código).
 // Cada pessoa preenche o seu em Config > Seu perfil. O código é o mesmo para todo mundo.
 
-const EMPTY = { nome: '', cargo: '', empresa: '', sobre: '', pessoas: [], frentes: [], regras: '', prazos: [], termos: '' };
+const EMPTY = { bot: '', nome: '', cargo: '', empresa: '', sobre: '', pessoas: [], frentes: [], regras: '', prazos: [], termos: '' };
 
 const slug = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 30) || 'frente';
 
@@ -10,6 +10,7 @@ function normalize(p) {
   p.pessoas = (Array.isArray(p.pessoas) ? p.pessoas : []).map(x => ({ nome: String(x.nome || '').trim(), papel: String(x.papel || '').trim() })).filter(x => x.nome).slice(0, 20);
   p.frentes = (Array.isArray(p.frentes) ? p.frentes : []).map(x => ({ id: x.id || slug(x.nome), nome: String(x.nome || '').trim(), desc: String(x.desc || '').trim() })).filter(x => x.nome).slice(0, 12);
   p.prazos = (Array.isArray(p.prazos) ? p.prazos : []).filter(x => x && x.data && x.titulo).slice(0, 12);
+  p.bot = String(p.bot || '').replace(/\s+/g, ' ').trim().slice(0, 24);
   for (const k of ['nome', 'cargo', 'empresa', 'sobre', 'regras', 'termos']) p[k] = String(p[k] || '').trim();
   return p;
 }
@@ -23,6 +24,8 @@ function migrate(DATA) {
 }
 
 const nome = (p) => p.nome || 'o usuário';
+// nome que a pessoa deu ao copiloto (padrão: Bit)
+const bot = (p) => (p && p.bot) || 'Bit';
 const gestor = (p) => (p.pessoas.find(x => /gerente|gestor|gestora|chefe|l[ií]der|coordenador geral|diretor/i.test(x.papel)) || {}).nome || '';
 const fmtData = (d) => { try { const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; } catch { return d; } };
 
@@ -119,4 +122,4 @@ function isMine(p, who) {
   return false;
 }
 
-module.exports = { isMine, EMPTY, normalize, migrate, contexto, contextoCurto, qMensagem, qDemanda, vocab, nome, gestor, slug };
+module.exports = { isMine, EMPTY, normalize, migrate, contexto, contextoCurto, qMensagem, qDemanda, vocab, nome, bot, gestor, slug };

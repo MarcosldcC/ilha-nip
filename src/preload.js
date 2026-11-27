@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('ilha', {
   onBubbleSet: on('win:bubbleSet'),
   profileGet: () => ipcRenderer.invoke('profile:get'),
   setupStatus: () => ipcRenderer.invoke('setup:status'),
+  aiConnect: (ai) => ipcRenderer.invoke('ai:connect', ai),
   openData: () => ipcRenderer.send('data:open'),
   profileSave: (p) => ipcRenderer.invoke('profile:save', p),
   notify: (title, body) => ipcRenderer.send('notify', { title, body }),
